@@ -1,0 +1,7 @@
+### Directory ###
+/target
+/.idea
+
+### File ###
+.env
+Cargo.lock
