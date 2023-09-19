@@ -14,11 +14,20 @@ use poise::serenity_prelude::ApplicationId;
 use crate::data::Data;
 use crate::commands::{
     general::{
-        about::about
+        about::about,
+        userinfo::{
+            avatar,
+            banner,
+            user,
+        }
     },
     music::{
         spotify::spotify
     },
+
+    test::{
+        welcome,
+    }
 };
 
 
@@ -65,7 +74,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
     let commands = vec![
         about(),
+        avatar(),
+        banner(),
+        user(),
         spotify(),
+
+        welcome(),
 
     ];
 

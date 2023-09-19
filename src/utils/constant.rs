@@ -10,7 +10,9 @@ pub const SPOTIFY_TRACK_URL: &str = "https://open.spotify.com/track/";
 pub const USER_SEARCH_FROM_ID: &str = "https://lookup.guru/";
 
 
-pub const SPTFY_ERR_MSG_CASE_1: &str = "might Offline/Not listening/playing from local";
+pub const SPTFY_ERR_MSG_CASE_ONE: &str = "might Offline/Not listening/playing from local";
+pub const SPTFY_ERR_MSG_CASE_ONE_JA: &str = "は オフライン/聴いていない/ローカルファイルから再生";
+
 pub const SPTFY_MSG_CASE_ONE: &str = "is listening Spotify!";
 
 

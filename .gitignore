@@ -2,6 +2,8 @@
 /target
 /.idea
 
+/src/commands/test/
+
 ### File ###
 .env
 Cargo.lock

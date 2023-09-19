@@ -1,4 +1,5 @@
 pub mod activity;
+pub mod describe;
 
 
 #[macro_export]
@@ -20,9 +21,10 @@ macro_rules! url {
     };
 }
 
+
 #[macro_export]
 macro_rules! url_with_bold {
     ($target:tt, $arg:tt) => {
-        format!("`[{}]({})`", $target,  $arg)
+        format!("**[{}]({})**", $target,  $arg)
     };
 }

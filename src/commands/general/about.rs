@@ -9,7 +9,7 @@ use crate::utils::constant::*;
 #[poise::command(slash_command)]
 pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     let description = {
-        let mut desc = env::var("CARGO_PKG_DESCRIPTION").unwrap();
+        let mut desc = env!("CARGO_PKG_DESCRIPTION");
         let poise_url = url!("Poise", "https://github.com/serenity-rs/poise");
         desc.replace("Poise", poise_url.as_str())
     };
@@ -34,7 +34,7 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     let platform = {
-        let project_version = env::var("CARGO_PKG_VERSION").unwrap();
+        let project_version = env!("CARGO_PKG_VERSION");
         // ↓これMac/LinuxでOS環境変数あったらどうしよう。。。
         let os = env::var("OS").unwrap_or(String::from("Linux"));
         format!("OS `{}`\nBot version: `{}`", os, project_version)
@@ -47,7 +47,7 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     let source = {
-        let gh_url = env::var("CARGO_PKG_REPOSITORY").unwrap();
+        let gh_url = env!("CARGO_PKG_REPOSITORY");
         url!("Github", gh_url)
     };
 
