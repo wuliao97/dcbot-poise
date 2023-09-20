@@ -53,7 +53,8 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx.send(|c| {
         c.embed(|e| {
-            e.description(quote!(description))
+            e.title("About Me")
+                .description(quote!(description))
                 .field("Commands", quote!(command), true)
                 .field("Users", quote!(user), true)
                 .field("Platform", quote!(platform), true)
