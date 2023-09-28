@@ -1,5 +1,8 @@
 pub mod activity;
 pub mod describe;
+pub mod embed;
+pub mod page;
+pub mod button;
 
 
 #[macro_export]
@@ -8,15 +11,26 @@ macro_rules! quote {
         format!(">>> {}", format!($target,  $($arg)+))
     };
 
-    ($($arg:tt)+) => {
+    ($($arg:expr)+) => {
         format!(">>> {}", format!("{}", $($arg)+))
+    };
+}
+
+#[macro_export]
+macro_rules! quote_with_bold {
+    ($target:expr, $($arg:tt)+) => {
+        format!(">>> **{}**", format!($target,  $($arg)+))
+    };
+
+    ($($arg:expr)+) => {
+        format!(">>> **{}**", format!("{}", $($arg)+))
     };
 }
 
 
 #[macro_export]
 macro_rules! url {
-    ($target:tt, $arg:tt) => {
+    ($target:expr, $arg:expr) => {
         format!("[{}]({})", $target,  $arg)
     };
 }
@@ -24,7 +38,8 @@ macro_rules! url {
 
 #[macro_export]
 macro_rules! url_with_bold {
-    ($target:tt, $arg:tt) => {
+    ($target:expr, $arg:expr) => {
         format!("**[{}]({})**", $target,  $arg)
     };
 }
+

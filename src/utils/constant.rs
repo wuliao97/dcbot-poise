@@ -1,6 +1,7 @@
 pub const COLOR_OKAY: u32 = 0x5dbcd2;
 pub const COLOR_FAIL: u32 = 0xff7761;
 pub const COLOR_WARN: u32 = 0xad7805;
+pub const COLOR_GRAY: u32 = 0x2b2d31;
 pub const SPOTIFY_GREEN: u32 = 0x1DB954;
 
 

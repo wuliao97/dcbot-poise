@@ -1,9 +1,10 @@
-use poise::serenity_prelude::{Activity, Presence, UserId};
+use poise::serenity_prelude::{ self as serenity, Activity, Presence, UserId};
 use crate::utils::Context;
 use crate::apis::spotify::{ExtractInfo, SpotifyAPI};
 use crate::url_with_bold;
 use crate::utils::constant::*;
 use chrono::*;
+use serenity::model::user::OnlineStatus;
 
 
 pub struct SpotifyActivity {
@@ -40,7 +41,7 @@ impl SpotifyActivity {
             return if activity.clone().is_some() {
                 self.activity = activity;
                 let track = SpotifyAPI::new().await.track(self.id().as_str()).await.unwrap();
-                let urls = ExtractInfo::new(track).url_from_track();
+                let urls = ExtractInfo::url_from_track(track);
                 self.url = urls;
 
                 true
@@ -50,6 +51,7 @@ impl SpotifyActivity {
         };
     }
 
+    #[inline]
     fn act(&self) -> Activity {
         self.activity.clone().unwrap()
     }
@@ -133,7 +135,6 @@ impl SpotifyActivity {
         format!("{}{}", SPOTIFY_TRACK_URL, url)
     }
 
-
     pub fn get_cover_url(&self) -> String {
         let material = self.act();
         let cover_literal = material.assets.unwrap().large_image.unwrap();
@@ -165,11 +166,11 @@ impl SpotifyActivity {
         } else {
             time.format("%M:%S")
         };
-        format!("Tile: {}", length).to_string()
+        format!("Time: {}", length).to_string()
     }
 
     pub fn get_color(&self) -> u32 {
-        0x1DB954
+        SPOTIFY_GREEN
     }
 }
 
@@ -177,4 +178,12 @@ impl SpotifyActivity {
 pub enum InfoType {
     WithUrl,
     WithoutUrl,
+}
+
+
+pub async fn global_presence(ctx: &serenity::Context, message: String) {
+    ctx.set_presence(
+        Some(Activity::playing(message)),
+        OnlineStatus::Online
+    ).await;
 }
