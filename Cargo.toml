@@ -1,6 +1,6 @@
 [package]
 name = "dcbot-poise"
-version = "0.1.2"
+version = "1.2.2"
 edition = "2021"
 repository = "https://github.com/wuliao97/dcbot-poise"
 description = "This Bot program is written by Rust using Poise framework. It dlsplays various Music info (e.g. a track info from your activity, search on the Spotify)"
@@ -15,11 +15,10 @@ log = { version = "0.4.14", default-features = false }
 strip-ansi-escapes = "0.1.0"
 serde = { version = "1.0.*", features = ["derive"] }
 serde_json = "1.0"
-sysinfo = "0.26.7"
+sysinfo = "0.29.7"
 async-trait = "0.1"
 rspotify = "0.11.7"
 chrono = "0.4.19"
-
 
 [dependencies.poise]
 version = "0.5.5"

@@ -3,7 +3,6 @@ use crate::utils::Context;
 use crate::apis::spotify::{ExtractInfo, SpotifyAPI};
 use crate::url_with_bold;
 use crate::utils::constant::*;
-use chrono::*;
 use serenity::model::user::OnlineStatus;
 
 
@@ -158,21 +157,14 @@ impl SpotifyActivity {
 
     pub fn format_time(&self) -> String {
         let duration = self.duration() as i64;
-        let time = NaiveDateTime::from_timestamp_opt(duration, 0).unwrap();
-        let length = if duration < 60 {
-            time.format("%S")
-        } else if duration > 3600 {
-            time.format("%H:%M:%S")
-        } else {
-            time.format("%M:%S")
-        };
-        format!("Time: {}", length).to_string()
+        ExtractInfo::format_time(duration)
     }
 
     pub fn get_color(&self) -> u32 {
         SPOTIFY_GREEN
     }
 }
+
 
 #[allow(dead_code)]
 pub enum InfoType {

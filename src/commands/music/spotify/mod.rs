@@ -11,10 +11,9 @@ use serenity::model::prelude::component::ButtonStyle;
 
 use crate::apis::spotify::{SpotifyAPI, ExtractInfo};
 use crate::{
-    url, quote, quote_with_bold,
+    quote,
     utils::{
         Context, Error,
-        // cut_string,
         discord::{
             describe::{
                 spotify_err_msg_one,
@@ -35,7 +34,7 @@ use crate::utils::collection::distinction_vec;
 use crate::utils::discord::page::Paging;
 
 
-// (e.g.Line:41)Why'd this gonna be default description of Slash command!?!?!
+// (e.g.Line:40) Why'd this gonna be default description of Slash command!?!?!
 // I got Shocked fr
 
 /// Various Spotify Command
@@ -214,17 +213,13 @@ pub async fn search(
 
     let extract = ExtractInfo::new(search_result);
     let names = distinction_vec(&extract.names(), 10);
-    let material = extract.surface();
-    let urls = extract.urls();
-    let formatted = forming_vec_to_show(material, urls);
+    let formatted = extract.vec_to_show();
     let distinction_vec = distinction_vec(&formatted, 10);
     let handler = SpotifyHandler::new(formatted.clone());
     let mut embeds = Page::from_vec(handler.decorate_embeds(distinction_vec.clone(), &user));
 
-
-
     let inter = ctx.send(|c| {
-        c.embeds = vec![embeds.get_page(0).unwrap().clone()];
+        c.embed(|e| { *e = embeds.get_page(0).unwrap().clone(); e });
         c.components(|c| {
             c.create_action_row(|row| {
                 row.create_select_menu(|select| {
@@ -267,7 +262,6 @@ pub async fn search(
         })
     }).await.unwrap();
 
-    // let mut context = ;
     while let Some(interaction) = inter.message().await.unwrap()
         .await_component_interactions(ctx.serenity_context())
         .author_id(user.id)
@@ -280,19 +274,11 @@ pub async fn search(
         match interaction.data.component_type {
             ComponentType::Button => {
                 let embed = match interaction.data.custom_id.as_str() {
-                    "search_left" => {
-                        embeds.first().unwrap()
-                    }
-                    "search_left_one" => {
-                        embeds.previous().unwrap()
-                    }
-                    "search_right_one" => {
-                        embeds.next().unwrap()
-                    }
-                    "search_right" => {
-                        embeds.last().unwrap()
-                    }
-                    _ => {CreateEmbed::default()}
+                    "search_left" => embeds.first().unwrap(),
+                    "search_left_one" => embeds.previous().unwrap(),
+                    "search_right_one" => embeds.next().unwrap(),
+                    "search_right" => embeds.last().unwrap(),
+                    _ => CreateEmbed::default().description("custom_id error.").clone(),
                 };
                 let page = embeds.get_current();
 
@@ -301,7 +287,7 @@ pub async fn search(
                     resp.components(|comp| {
                         comp
                             .add_action_row(tmp(names.clone(), page))
-                            .add_action_row(tmp_2((embeds.available_page())))
+                            .add_action_row(tmp_2(embeds.available_page()))
                     })
                 }).await.unwrap()
             }
@@ -311,18 +297,9 @@ pub async fn search(
                         let page = embeds.get_current();
                         let column = interaction.data.values.get(0).unwrap().parse::<usize>().unwrap();
                         let index = (page * 10) + column;
-                        let info = extract.general_info(index);
-                        let sub_info = extract.sub_info(index);
 
                         inter.edit(ctx, |create_reply| {
-                            create_reply.embed(|embed| {
-                                embed.author(|a| a.name("Search Result"))
-                                    .color(SPOTIFY_GREEN)
-                                    .field("title", quote_with_bold!(info[0]), false)
-                                    .field("by", quote_with_bold!(info[1]), false)
-                                    .field("on", quote_with_bold!(info[2]), false)
-                                    .thumbnail(sub_info.get(1).unwrap())
-                            })
+                            create_reply.embed(|e| { *e = extract.to_show_with_embed(index); e })
                                 .components(|c| c)
                         }).await.unwrap();
                         break;
@@ -337,26 +314,6 @@ pub async fn search(
     Ok(())
 }
 
-
-#[poise::command(prefix_command)]
-pub async fn register(ctx: Context<'_>) -> Result<(), Error> {
-    poise::builtins::register_application_commands_buttons(ctx).await.unwrap();
-    Ok(())
-}
-
-
-pub fn forming_vec_to_show(material: Vec<Vec<String>>, urls: Vec<Vec<String>>) -> Vec<String> {
-    let mut vec = vec![];
-    for (m, u) in material.iter().cloned().zip(urls) {
-        let title = url!(m.get(0).unwrap(), u.get(0).unwrap());
-        let artist = m.get(2).unwrap().split(";").collect::<Vec<&str>>().join(", ");
-        let album = m.get(1).unwrap();
-
-        vec.push(format!("**{}** by **{}** on **{}**", title, artist, album))
-    }
-
-    vec
-}
 
 
 fn tmp(names: Vec<Vec<String>>, page: usize) -> CreateActionRow {

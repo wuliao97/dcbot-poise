@@ -1,7 +1,10 @@
+use chrono::NaiveDateTime;
 use rspotify::{Credentials, ClientCredsSpotify, ClientResult};
 use rspotify::clients::BaseClient;
 use rspotify::model::{idtypes, FullTrack, SearchResult, SearchType, Market};
-use crate::url;
+use serenity::builder::CreateEmbed;
+use crate::{quote, url_with_bold};
+use crate::utils::constant::SPOTIFY_GREEN;
 
 
 pub struct SpotifyAPI {
@@ -44,45 +47,144 @@ impl ExtractInfo {
         Self { material }
     }
 
-    pub fn general_info(&self, index: usize) -> Vec<String> {
-        let mut base: Vec<String> = vec![];
-        match self.material.clone() {
-            SearchResult::Albums(_info) => {}
-            SearchResult::Artists(_info) => {}
-            SearchResult::Tracks(info) => {
-                let item = info.items.get(index).unwrap();
-                let title = url!(item.name, &item.external_urls["spotify"]);
-                base.push(title);
-                let artist = item.artists.iter()
-                        .map(|artist| url!(artist.name, &artist.external_urls["spotify"]))
-                        .collect::<Vec<String>>()
-                        .join(", ");
-                base.push(artist);
-                let album = url!(item.album.name, item.album.external_urls["spotify"]);
-                base.push(album);
-            }
-            _ => {}
-        }
-        base
-    }
 
     pub fn sub_info(&self, index: usize) -> Vec<String> {
         let mut base: Vec<String> = vec![];
 
         match self.material.clone() {
-            SearchResult::Albums(_info) => {}
-            SearchResult::Artists(_info) => {}
+            SearchResult::Albums(info) => {
+                let item = info.items.get(index).unwrap().clone();
+                base.push(item.images.get(0).unwrap().url.to_string());
+                base.push(item.release_date.unwrap().clone());
+            }
+            SearchResult::Artists(info) => {
+                let item = info.items.get(index).unwrap();
+                base.push(item.images.get(0).unwrap().url.to_string());
+                base.push(item.genres.join(", "));
+                base.push(item.followers.total.to_string());
+            }
             SearchResult::Tracks(info) => {
                 let item = info.items.get(index).unwrap();
-                base.push(item.duration.num_seconds().to_string());
-                base.push(item.album.images.get(0).unwrap().url.to_string())
+                base.push(item.album.images.get(0).unwrap().url.to_string());
+                base.push(ExtractInfo::format_time(item.duration.num_seconds()));
+            }
+            _ => {}
+        }
+        base
+    }
+
+
+    pub fn vec_to_show(&self) -> Vec<String> {
+        let mut base: Vec<String> = vec![];
+
+        match self.material.clone() {
+            SearchResult::Albums(info) => {
+                for item in info.items {
+                    let album_with_url = {
+                        let name = &item.name;
+                        let url = &item.external_urls["spotify"];
+                        url_with_bold!(name, url)
+                    };
+                    let artist_name = item.artists
+                        .iter()
+                        .map(|artist| format!("**{}**", artist.name))
+                        .collect::<Vec<String>>()
+                        .join(", ");
+                    base.push(format!("**{}** by {}", album_with_url, artist_name));
+                }
+            }
+            SearchResult::Artists(info) => {
+                for item in info.items {
+                    let artist_with_url = {
+                        let name = &item.name;
+                        let url = &item.external_urls["spotify"];
+                        url_with_bold!(name, url)
+                    };
+                    base.push(format!("**{}**", artist_with_url));
+                }
+            }
+            SearchResult::Tracks(info) => {
+                for item in info.items {
+                    let title_with_url = {
+                        let name = &item.name;
+                        let url = &item.external_urls["spotify"];
+                        url_with_bold!(name, url)
+                    };
+                    let artist = item.artists
+                        .iter()
+                        .map(|artist| format!("**{}**", artist.name))
+                        .collect::<Vec<String>>()
+                        .join(", ");
+                    let album = item.album.name;
+                    base.push(format!("**{}** by {} on **{}**", title_with_url, artist, album));
+                }
             }
             _ => {}
         }
 
         base
-
     }
+
+
+    pub fn to_show_with_embed(&self, index: usize) -> CreateEmbed {
+        let mut embed = CreateEmbed::default()
+            .title("Search Result")
+            .color(SPOTIFY_GREEN)
+            .clone();
+
+        match self.material.clone() {
+            SearchResult::Albums(info) => {
+                let item = info.items.get(index).unwrap();
+                let artist_with_url = &item.artists
+                    .iter()
+                    .map(|artist| url_with_bold!(&artist.name, &artist.external_urls["spotify"]))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                dbg!(&item.album_group);
+
+                embed.title(item.name.to_string())
+                    .url(item.external_urls["spotify"].to_string())
+                    .field("by", quote!(artist_with_url), false)
+                    .thumbnail(item.images.get(0).unwrap().url.to_string())
+                    .footer(|f| f.text(format!("Released: {}", item.release_date.clone().unwrap())));
+            }
+            SearchResult::Artists(info) => {
+                let item = info.items.get(index).unwrap();
+                let genres = item.genres
+                    .iter()
+                    .map(|genre| format!("**{}**", genre))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                embed.title(&item.name)
+                    .url(&item.external_urls["spotify"])
+                    .description(quote!(genres))
+                    .thumbnail(item.images.get(0).unwrap().url.to_string())
+                    .footer(|f| f.text(format!("Follower: {}", &item.followers.total)));
+            }
+            SearchResult::Tracks(info) => {
+                let item = info.items.get(index).unwrap();
+
+                let title = url_with_bold!(&item.name, &item.external_urls["spotify"]);
+                let artist = item.artists.iter()
+                    .map(|artist| url_with_bold!(artist.name, &artist.external_urls["spotify"]))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                let album = url_with_bold!(item.album.name.clone(), item.album.external_urls["spotify"].clone());
+
+                embed.thumbnail(&item.album.images.get(0).unwrap().url.to_string())
+                    .field("title", quote!(title), false)
+                    .field("by", quote!(artist), false)
+                    .field("on", quote!(album), false)
+                    .footer(|f| f.text(format!("Time: {}", ExtractInfo::format_time(item.duration.num_seconds()))))
+                ;
+            }
+            _ => {}
+        }
+        embed
+    }
+
+
 
     // SearchResult::Albums(info) => {}
     // SearchResult::Artists(info) => {}
@@ -119,12 +221,17 @@ impl ExtractInfo {
 
         match self.material.clone() {
             SearchResult::Albums(info) => {
-                base.push(info.items.iter().map(|item| item.name.to_owned()).collect());
-                base
+                for item in info.items {
+                    let mut set = vec![];
+                    set.push(item.name);
+                    base.push(set);
+                }
             }
             SearchResult::Artists(info) => {
-                base.push(info.items.iter().map(|item| item.name.to_owned()).collect());
-                base
+                for item in info.items {
+                    let set = vec![item.name];
+                    base.push(set);
+                }
             }
             SearchResult::Tracks(info) => {
                 for item in info.items {
@@ -134,18 +241,31 @@ impl ExtractInfo {
                     set.push(item.artists.iter().map(|artist| artist.name.to_owned()).collect::<Vec<String>>().join(";"));
                     base.push(set);
                 };
-                base
+
             }
-            _ => {base}
+            _ => {}
         }
+        base
     }
 
     pub fn urls(&self) -> Vec<Vec<String>> {
         let mut base: Vec<Vec<String>> = vec![];
 
         match self.material.clone() {
-            SearchResult::Albums(_nfo) => {base}
-            SearchResult::Artists(_info) => {base}
+            SearchResult::Albums(info) => {
+                for item in info.items {
+                    let set = vec![item.external_urls["spotify"].to_owned()];
+                    base.push(set);
+                }
+                base
+            }
+            SearchResult::Artists(info) => {
+                for item in info.items {
+                    let set = vec![item.external_urls["spotify"].to_owned()];
+                    base.push(set);
+                }
+                base
+            }
             SearchResult::Tracks(info) => {
                 for item in info.items {
                     let mut set = vec![];
@@ -174,45 +294,15 @@ impl ExtractInfo {
     }
 
 
-    pub fn extract_vec(&self, material: Vec<String>, first: usize, last: usize) -> Vec<String> {
-        let tmp: &[String] = &material[first..=last];
-        tmp.to_vec()
-    }
-
-    pub fn distinction_vec(&self, material: Vec<String>, max_value: usize) -> Vec<Vec<String>> {
-        let mut vec: Vec<Vec<String>> = Vec::new();
-        let limit = material.len();
-        let max_count = (limit as f32 / max_value as f32).ceil() as usize;
-
-        for idx in 0..max_count {
-            let (first, last) = {
-                let index = idx;
-                let first = &index * max_value;
-                let last = if first + max_value > material.len() && material.len() % max_value != 0 {
-                    let tmp = limit.clone();
-                    tmp - 1
-                } else {
-                    (index + 1) * max_value - 1
-                };
-                (first, last)
-            };
-            vec.push(self.extract_vec(material.to_vec(), first, last));
-        }
-        vec
+    pub fn format_time(duration: i64) -> String {
+        let time = NaiveDateTime::from_timestamp_opt(duration, 0).unwrap();
+        let length = if duration < 60 {
+            time.format("%S")
+        } else if duration > 3600 {
+            time.format("%H:%M:%S")
+        } else {
+            time.format("%M:%S")
+        };
+        format!("Time: {}", length).to_string()
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[tokio::test]
-//     async fn it_works() {
-//         let api = SpotifyAPI::new().await;
-//
-//         let result = api.search("king gnu", SearchType::Track, None, 10).await.unwrap();
-//         let info = ExtractInfo::new(result);
-//
-//         dbg!(info.surface());
-//     }
-// }

@@ -9,7 +9,7 @@ pub async fn event_handler(
     ctx: &serenity::Context,
    event: &Event<'_>,
    _framework: poise::FrameworkContext<'_, Data, Error>,
-   data: &Data,
+   _data: &Data,
 ) -> Result<(), Error> {
     match event {
         Event::Ready {..} => {

@@ -1,7 +1,3 @@
-
-
-
-
 pub fn extract_vec(material: &Vec<String>, (first, last): (usize, usize)) -> Vec<String> {
     let tmp: &[String] = &material[first..=last];
     tmp.to_vec()

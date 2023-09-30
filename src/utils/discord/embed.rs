@@ -23,6 +23,16 @@ use crate::utils::constant::*;
 // }
 
 
+struct SpotifySearch {
+    query: String,
+
+}
+
+impl SpotifySearch {
+
+}
+
+
 pub fn spotify_search_embed(description: &String, user: &serenity::User, (first, last): (usize, usize)) -> CreateEmbed {
     CreateEmbed::default()
         .author(|author| {

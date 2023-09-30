@@ -26,14 +26,8 @@ use crate::commands::{
     },
     music::{
         spotify::spotify,
-        // spotify::register,
     },
     meonly::me_only,
-    //
-    // test::{
-    //     welcome,
-    //     button::button,
-    // }
 };
 
 
@@ -48,36 +42,9 @@ async fn main() -> Result<(), Box<dyn error::Error>>{
 
     let token = env::var("BOT_TOKEN").unwrap();
 
-    // let http = Http::new(&token);
-    // let (owners, _) = match http.get_current_application_info().await {
-    //     Ok(info) => {
-    //         let mut owners = HashSet::new();
-    //         owners.insert(info.owner.id);
-    //
-    //         if let Some(team) = info.team {
-    //             for member in team.members {
-    //                 owners.insert(member.user.id);
-    //             }
-    //         }
-    //         (owners, info.id)
-    //     }
-    //     Err(why) => {
-    //         log::warn!("Couldn't access Application info: {:?}", why);
-    //         log::warn!("Trying environment variable for Bot id.");
-    //         let id = env::var("BOT_ID").unwrap();
-    //         let bot_id = id.parse::<u64>().unwrap();
-    //         (HashSet::new(), ApplicationId(bot_id))
-    //     }
-    // };
-
     if cfg!(debug_assertions) {
        log::warn!("Running Bot in Debug mode.");
     }
-
-    // log::info!("Registering owners:");
-    // for owner in owners {
-    //     log::info!("    ・{}", owner);
-    // }
 
     let commands = vec![
         about(),
@@ -91,9 +58,6 @@ async fn main() -> Result<(), Box<dyn error::Error>>{
 
 
         me_only(),
-        // register(),
-        // welcome(),
-        // button(),
     ];
 
     let framework = poise::Framework::builder()

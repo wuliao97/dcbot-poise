@@ -6,7 +6,7 @@ use crate::utils::{Context, Error};
 use crate::utils::constant::*;
 
 
-
+/// About Me
 #[poise::command(slash_command)]
 pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     let description = {
@@ -31,7 +31,7 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
         format!("`{}` Servers\n`{}` Users", servers, users)
     };
     let platform = {
-        let mut system = System::new();
+        let system = System::new();
         let os = system.name().unwrap();
         let project_version = env!("CARGO_PKG_VERSION");
         format!("OS `{}`\nBot Version `{}`", os, project_version)
