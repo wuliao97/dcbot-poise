@@ -31,6 +31,7 @@ use crate::{
     }
 };
 use crate::utils::collection::distinction_vec;
+use crate::utils::discord::embed::spotify_some_error;
 use crate::utils::discord::page::Paging;
 
 
@@ -66,22 +67,21 @@ pub async fn track(
 ) -> Result<(), Error> {
     let user = user.as_ref().unwrap_or_else(|| ctx.author());
     let mut activity = SpotifyActivity::new(ctx, user.id);
+    let flag = activity.listening().await;
 
-    if !activity.listening().await {
-        ctx.send(|c|
-            c.embed(|e| {
-                let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
-                e.description(err_msg)
-                    .field("Try again", quote!("</spotify cover:1152405901936971879>"), true)
-            })
-                .ephemeral(true)
-        ).await.unwrap()
-    } else {
-        ctx.send(|c| {
+    ctx.send(|send| {
+        if flag {
             let url = activity.get_track_url();
-            c.content(url)
-        }).await.unwrap()
-    };
+            send.content(url)
+        } else {
+            send.embed(|e| {
+                let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
+                *e = spotify_some_error(err_msg, Some("</spotify track:1111367127614640178>".to_string()));
+                e
+            })
+                .ephemeral(!flag)
+        }
+    }).await.unwrap();
 
     Ok(())
 }
@@ -101,27 +101,24 @@ pub async fn cover(
 ) -> Result<(), Error> {
     let user = user.as_ref().unwrap_or_else(|| ctx.author());
     let mut activity = SpotifyActivity::new(ctx, user.id);
-
-    if !activity.listening().await {
-        ctx.send(|c|
-            c.embed(|e| {
-                let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
-                e.description(err_msg)
-                    .field("Try again", quote!("</spotify cover:1152405901936971879>"), true)
-            })
-                .ephemeral(true)
-        ).await.unwrap()
+    let flag = activity.listening().await;
+    let embed = if flag {
+        let url = activity.get_cover_url();
+        CreateEmbed::default()
+            .description(format!("{} is Listening", user.mention()))
+            .field("", activity.title_with_url(), false)
+            .image(url)
+            .color(SPOTIFY_GREEN)
+            .clone()
     } else {
-        ctx.send(|c| {
-            c.embed(|e| {
-                let url = activity.get_cover_url();
-                e.description(format!("{} is Listening", user.mention()))
-                    .field("", activity.title_with_url(), false)
-                    .image(url)
-                    .color(SPOTIFY_GREEN)
-            })
-        }).await.unwrap()
+        let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
+        spotify_some_error(err_msg, Some("</spotify cover:1111367127614640178>".to_string()))
     };
+
+    ctx.send(|send| {
+        send.embed(|e| { *e = embed; e })
+            .ephemeral(!flag)
+    }).await.unwrap();
 
     Ok(())
 }
@@ -142,30 +139,26 @@ pub async fn listening(
 ) -> Result<(), Error> {
     let user = user.as_ref().unwrap_or_else(|| ctx.author());
     let mut activity = SpotifyActivity::new(ctx, user.id);
-
-    if !activity.listening().await {
-        ctx.send(|c|
-            c.embed(|e| {
-                let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
-                e.description(err_msg)
-                    .field("Try again", quote!("</spotify cover:1152405901936971879>"), true)
-            })
-                .ephemeral(true)
-        ).await.unwrap()
+    let flag = activity.listening().await;
+    let embed = if flag {
+        let (title, artist, album) = activity.get_info(InfoType::WithUrl);
+        CreateEmbed::default()
+            .description(format!("{} {}", user.mention(), SPTFY_MSG_CASE_ONE))
+            .thumbnail(activity.get_cover_url())
+            .field("title", quote!(title), false)
+            .field("by", quote!(artist), false)
+            .field("on", quote!(album), false)
+            .footer(|f| f.text(activity.format_time()))
+            .color(activity.get_color())
+            .clone()
     } else {
-        ctx.send(|c| {
-            c.embed(|e| {
-                let (title, artist, album) = activity.get_info(InfoType::WithUrl);
-                e.description(format!("{} {}", user.mention(), SPTFY_MSG_CASE_ONE))
-                    .thumbnail(activity.get_cover_url())
-                    .field("title", quote!(title), false)
-                    .field("by", quote!(artist), false)
-                    .field("on", quote!(album), false)
-                    .footer(|f| f.text(activity.format_time()))
-                    .color(activity.get_color())
-            })
-        }).await.unwrap()
+        let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
+        spotify_some_error(err_msg, Some("</spotify listening:1111367127614640178>".to_string()))
     };
+    ctx.send(|send| {
+        send.embed(|e| { *e = embed; e })
+            .ephemeral(!flag)
+    }).await.unwrap();
 
     Ok(())
 }

@@ -1,6 +1,7 @@
 use poise::serenity_prelude as serenity;
 use serenity::CreateEmbed;
 
+use crate::quote;
 use crate::utils::constant::*;
 
 
@@ -29,7 +30,19 @@ struct SpotifySearch {
 }
 
 impl SpotifySearch {
+}
 
+
+pub fn spotify_some_error<T: ToString>(err_msg: T, cmd_id: Option<String>) -> CreateEmbed {
+    let mut material = CreateEmbed::default();
+    material.color(COLOR_FAIL)
+        .description(err_msg.to_string());
+
+    if let Some(id) = cmd_id {
+        material.field("Try Again", quote!(id), false);
+    };
+
+    material.clone()
 }
 
 
