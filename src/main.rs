@@ -4,65 +4,61 @@ mod data;
 mod event;
 mod utils;
 
-
 use std::{env, error};
+use tokio::sync::Mutex;
+use poise::serenity_prelude as serenity;
 
 extern crate log;
 extern crate pretty_env_logger;
 
 use crate::data::Data;
 use crate::event::event_handler;
+use crate::utils::db::get_pool;
 use crate::commands::{
-    general::{
-        about::about,
-        userinfo::{
-            avatar,
-            banner,
-            user,
-        },
-        serverinfo::{
-            server
-        },
-    },
+    exam,
+    general,
     music::{
-        spotify::spotify,
+        spotify,
     },
-    meonly::me_only,
+    game::{
+        starrail,
+        dokkan
+    },
+    meonly,
 };
 
 
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn error::Error>>{
-    env::set_var("RUST_LOG", "error");
+async fn main() -> Result<(), Box<dyn error::Error>> {
     if let Err(why) = dotenv::dotenv() {
         log::error!("Unable to find .env file: {}", why);
     }
+    env::set_var("RUST_LOG", "error");
     pretty_env_logger::init();
 
-    let token = env::var("BOT_TOKEN").unwrap();
-
     if cfg!(debug_assertions) {
-       log::warn!("Running Bot in Debug mode.");
+        log::warn!("Running Bot in Debug mode.");
     }
 
     let commands = vec![
-        about(),
-        avatar(),
-        banner(),
-        user(),
-        server(),
+        exam::fe::fe(),
 
+        general::about::about(),
+        general::userinfo::avatar(),
+        general::userinfo::banner(),
+        general::userinfo::user(),
+        general::serverinfo::server(),
 
-        spotify(),
+        spotify::spotify(),
 
+        starrail::command::starrail(),
+        dokkan::command::dokkanbattle(),
 
-        me_only(),
+        meonly::me_only(),
     ];
 
     let framework = poise::Framework::builder()
-        .token(token)
-        .intents(poise::serenity_prelude::GatewayIntents::all())
         .options(poise::FrameworkOptions {
             commands,
             event_handler: |_ctx, event, _framework, _data| {
@@ -74,16 +70,25 @@ async fn main() -> Result<(), Box<dyn error::Error>>{
             },
             ..Default::default()
         })
-        .setup(|ctx, _ready, framework| {
+        .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await.unwrap();
                 Ok(Data {
-                    //
+                    pool: Mutex::new(get_pool().await?),
+                    mihoyo: Mutex::new(miHoYo_API::client::Client::default())
                 })
             })
-        });
+        })
+        .build();
 
-    if let Err(why) = framework.run_autosharded().await {
+    let token = env::var("BOT_TOKEN")?;
+    let intents = serenity::GatewayIntents::all();
+
+    let mut client = serenity::ClientBuilder::new(token, intents)
+        .framework(framework)
+        .await?;
+
+    if let Err(why) = client.start_autosharded().await {
         log::error!("Client Error: {}", why);
     }
 

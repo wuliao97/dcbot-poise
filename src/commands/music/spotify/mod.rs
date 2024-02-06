@@ -1,13 +1,9 @@
-use poise::serenity_prelude::{
-    self as serenity,
-    // CollectComponentInteraction
-};
+use poise::{CreateReply, serenity_prelude as serenity};
 use poise::serenity_prelude::Mentionable;
-use serenity::builder::{CreateActionRow, CreateEmbed};
+use serenity::builder::{CreateActionRow, CreateEmbed, CreateEmbedFooter};
 use rspotify::model::{SearchType, Country, Market::*};
+use serenity::all::{ButtonStyle, ComponentInteractionDataKind, CreateButton, CreateSelectMenu, CreateSelectMenuKind, CreateSelectMenuOption, EditMessage};
 use serenity::futures::StreamExt;
-use serenity::model::application::component::ComponentType;
-use serenity::model::prelude::component::ButtonStyle;
 
 use crate::apis::spotify::{SpotifyAPI, ExtractInfo};
 use crate::{
@@ -40,12 +36,12 @@ use crate::utils::discord::page::Paging;
 
 /// Various Spotify Command
 #[poise::command(
-slash_command,
-subcommands("track", "cover", "listening", "search"),
-subcommand_required,
-name_localized("ja", "スポティファイ"),
-description_localized("ja", "スポティファイの様々なコマンド"),
-guild_only
+    slash_command,
+    subcommands("track", "cover", "listening", "search"),
+    subcommand_required,
+    name_localized("ja", "スポティファイ"),
+    description_localized("ja", "スポティファイの様々なコマンド"),
+    guild_only
 )]
 pub async fn spotify(_: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -54,10 +50,10 @@ pub async fn spotify(_: Context<'_>) -> Result<(), Error> {
 
 /// Display the Track url that the User is Listening to
 #[poise::command(
-slash_command,
-name_localized("ja", "トラック"),
-description_localized("ja", "ユーザーが聞いてるトラックのURLを表示"),
-guild_only
+    slash_command,
+    name_localized("ja", "トラック"),
+    description_localized("ja", "ユーザーが聞いてるトラックのURLを表示"),
+    guild_only
 )]
 pub async fn track(
     ctx: Context<'_>,
@@ -69,29 +65,26 @@ pub async fn track(
     let mut activity = SpotifyActivity::new(ctx, user.id);
     let flag = activity.listening().await;
 
-    ctx.send(|send| {
-        if flag {
-            let url = activity.get_track_url();
-            send.content(url)
-        } else {
-            send.embed(|e| {
-                let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
-                *e = spotify_some_error(err_msg, Some("</spotify track:1111367127614640178>".to_string()));
-                e
-            })
-                .ephemeral(!flag)
-        }
-    }).await.unwrap();
+    let reply = if flag {
+        let url = activity.get_track_url();
+        CreateReply::default().content(url)
+    } else {
+        let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
+        CreateReply::default().embed(spotify_some_error(err_msg, Some("</spotify track:1111367127614640178>".to_string())))
+            .ephemeral(!flag)
+    };
+
+    ctx.send(reply).await?;
 
     Ok(())
 }
 
 /// Display the Track url that the User is Listening to
 #[poise::command(
-slash_command,
-name_localized("ja", "ジャケット"),
-description_localized("ja", "ユーザーが聞いてるトラックのジャケットを表示"),
-guild_only
+    slash_command,
+    name_localized("ja", "ジャケット"),
+    description_localized("ja", "ユーザーが聞いてるトラックのジャケットを表示"),
+    guild_only
 )]
 pub async fn cover(
     ctx: Context<'_>,
@@ -115,10 +108,10 @@ pub async fn cover(
         spotify_some_error(err_msg, Some("</spotify cover:1111367127614640178>".to_string()))
     };
 
-    ctx.send(|send| {
-        send.embed(|e| { *e = embed; e })
-            .ephemeral(!flag)
-    }).await.unwrap();
+    let reply = CreateReply::default().embed(embed)
+        .ephemeral(!flag);
+
+    ctx.send(reply).await.unwrap();
 
     Ok(())
 }
@@ -126,10 +119,10 @@ pub async fn cover(
 
 /// Display the Track info that the User Listening to
 #[poise::command(
-slash_command,
-name_localized("ja", "リスニング"),
-description_localized("ja", "ユーザーが聞いてるトラックの情報を表示"),
-guild_only
+    slash_command,
+    name_localized("ja", "リスニング"),
+    description_localized("ja", "ユーザーが聞いてるトラックの情報を表示"),
+    guild_only
 )]
 pub async fn listening(
     ctx: Context<'_>,
@@ -148,17 +141,16 @@ pub async fn listening(
             .field("title", quote!(title), false)
             .field("by", quote!(artist), false)
             .field("on", quote!(album), false)
-            .footer(|f| f.text(activity.format_time()))
+            .footer(CreateEmbedFooter::new(activity.format_time()))
             .color(activity.get_color())
-            .clone()
     } else {
         let err_msg = format!("{} {}", user.mention(), spotify_err_msg_one(ctx.locale()));
         spotify_some_error(err_msg, Some("</spotify listening:1111367127614640178>".to_string()))
     };
-    ctx.send(|send| {
-        send.embed(|e| { *e = embed; e })
-            .ephemeral(!flag)
-    }).await.unwrap();
+    let reply = CreateReply::default()
+        .embed(embed)
+        .ephemeral(!flag);
+    ctx.send(reply).await.unwrap();
 
     Ok(())
 }
@@ -168,9 +160,9 @@ pub async fn listening(
 
 /// ※BETA VERSION Agent of search on Spotify
 #[poise::command(
-slash_command,
-name_localized("ja", "検索"),
-description_localized("ja", "Spotifyで検索"),
+    slash_command,
+    name_localized("ja", "検索"),
+    description_localized("ja", "Spotifyで検索"),
 )]
 pub async fn search(
     ctx: Context<'_>,
@@ -189,6 +181,7 @@ pub async fn search(
     #[description_localized("ja", "検索オプションの言語選択")]
     language: Option<SpotifySearchLanguage>
 ) -> Result<(), Error> {
+    let uuid = ctx.id();
     let api = SpotifyAPI::new().await;
     let user = ctx.author();
     let limit = limit.unwrap_or_else(|| 5);
@@ -211,61 +204,33 @@ pub async fn search(
     let handler = SpotifyHandler::new(formatted.clone());
     let mut embeds = Page::from_vec(handler.decorate_embeds(distinction_vec.clone(), &user));
 
-    let inter = ctx.send(|c| {
-        c.embed(|e| { *e = embeds.get_page(0).unwrap().clone(); e });
-        c.components(|c| {
-            c.create_action_row(|row| {
-                row.create_select_menu(|select| {
-                    select.custom_id("select_song")
-                        .min_values(1)
-                        .max_values(1)
-                        .placeholder("Choose your want a Song!")
-                        .options(|option| {
-                            for (idx, name) in names.get(0).unwrap().iter().enumerate() {
-                                option.create_option(|o| o.label(name).value(idx));
-                            }
-                            option
-                        })
-                })
-            });
-            if embeds.get_page(1).is_some() {
-                c.create_action_row(|row| {
-                    row.create_button(|btn| {
-                        btn.custom_id("search_left")
-                            .label("<<")
-                            .style(ButtonStyle::Success)
-                            .disabled(true)
-                    }).create_button(|btn| {
-                        btn.custom_id("search_left_one")
-                            .label("<")
-                            .style(ButtonStyle::Success)
-                            .disabled(true)
-                    }).create_button(|btn| {
-                        btn.custom_id("search_right_one")
-                            .label(">")
-                            .style(ButtonStyle::Success)
-                    }).create_button(|btn| {
-                        btn.custom_id("search_right")
-                            .label(">>")
-                            .style(ButtonStyle::Success)
-                    })
-                });
-            }
-            c
-        })
-    }).await.unwrap();
+    let components = vec![
+        tmp(names.clone(), embeds.get_current()),
+        tmp_2(embeds.available_page())
+    ];
 
-    while let Some(interaction) = inter.message().await.unwrap()
+    let inter = ctx.send(CreateReply::default()
+        .embed(embeds.get_page(0).unwrap().clone())
+        .components(components)).await?;
+
+
+    // while let Some(mut interaction) = serenity::ComponentInteractionCollector::new(ctx)
+    //     .author_id(ctx.author().id)
+    //     .channel_id(ctx.channel_id())
+    //     .timeout(std::time::Duration::from_secs(240))
+    //     .filter(move|mci| mci.data.custom_id == uuid.to_string())
+    //     .await
+    while let Some(interaction) = inter
+        .message()
+        .await?
         .await_component_interactions(ctx.serenity_context())
         .author_id(user.id)
         .timeout(std::time::Duration::from_secs(240))
-        .build()
-        .next()
         .await
     {
         interaction.defer(&ctx.http()).await.unwrap();
-        match interaction.data.component_type {
-            ComponentType::Button => {
+        match interaction.data.kind {
+            ComponentInteractionDataKind::Button => {
                 let embed = match interaction.data.custom_id.as_str() {
                     "search_left" => embeds.first().unwrap(),
                     "search_left_one" => embeds.previous().unwrap(),
@@ -274,27 +239,26 @@ pub async fn search(
                     _ => CreateEmbed::default().description("custom_id error.").clone(),
                 };
                 let page = embeds.get_current();
-
-                inter.edit(ctx.clone(), |resp| {
-                    resp.embed(|e| { *e = embed; e });
-                    resp.components(|comp| {
-                        comp
-                            .add_action_row(tmp(names.clone(), page))
-                            .add_action_row(tmp_2(embeds.available_page()))
-                    })
-                }).await.unwrap()
+                let components = vec![
+                    tmp(names.clone(), page),
+                    tmp_2(embeds.available_page())
+                ];
+                inter.edit(ctx.clone(), CreateReply::default()
+                    .embed(embed)
+                    .components(components)
+                ).await.unwrap()
             }
-            ComponentType::SelectMenu => {
+            ComponentInteractionDataKind::StringSelect { values } => {
                 match interaction.data.custom_id.as_str() {
                     "select_song" => {
                         let page = embeds.get_current();
-                        let column = interaction.data.values.get(0).unwrap().parse::<usize>().unwrap();
+                        let column = values[0].parse::<usize>()?;
                         let index = (page * 10) + column;
 
-                        inter.edit(ctx, |create_reply| {
-                            create_reply.embed(|e| { *e = extract.to_show_with_embed(index); e })
-                                .components(|c| c)
-                        }).await.unwrap();
+                        inter.edit(ctx, CreateReply::default()
+                            .embed(extract.to_show_with_embed(index))
+                            .components(vec![])
+                        ).await.unwrap();
                         break;
                     }
                     _ => {}
@@ -303,49 +267,42 @@ pub async fn search(
             _ => {}
         }
     }
-
     Ok(())
 }
 
 
 
 fn tmp(names: Vec<Vec<String>>, page: usize) -> CreateActionRow {
-    CreateActionRow::default()
-        .create_select_menu(|select| {
-            select.custom_id("select_song")
+    let options: Vec<CreateSelectMenuOption> = names.get(page).unwrap().iter().enumerate()
+        .map(|(idx, name)| CreateSelectMenuOption::new(name, idx.to_string()))
+        .collect();
+
+    CreateActionRow::SelectMenu(CreateSelectMenu::new(
+        "select_song", CreateSelectMenuKind::String { options })
                 .min_values(1)
                 .max_values(1)
                 .placeholder("Choose your want a Song!")
-                .options(|option| {
-                    for (idx, name) in names.get(page).unwrap().iter().enumerate() {
-                        option.create_option(|o| o.label(name).value(idx));
-                    }
-                    option
-                })
-        }).clone()
+    )
 }
 
 fn tmp_2((left, right): (bool, bool)) -> CreateActionRow {
-    CreateActionRow::default()
-        .create_button(|btn| {
-            btn.custom_id("search_left")
-                .label("<<")
-                .style(ButtonStyle::Success)
-                .disabled(left)
-        }).create_button(|btn| {
-            btn.custom_id("search_left_one")
-                .label("<")
-                .style(ButtonStyle::Success)
-                .disabled(left)
-        }).create_button(|btn| {
-            btn.custom_id("search_right_one")
-                .label(">")
-                .style(ButtonStyle::Success)
-                .disabled(right)
-        }).create_button(|btn| {
-            btn.custom_id("search_right")
-                .label(">>")
-                .style(ButtonStyle::Success)
-                .disabled(right)
-        }).clone()
+    let buttons = vec![
+        CreateButton::new("search_left")
+            .label("<<")
+            .style(ButtonStyle::Success)
+            .disabled(left),
+        CreateButton::new("search_left_one")
+            .label("<")
+            .style(ButtonStyle::Success)
+            .disabled(left),
+        CreateButton::new("search_right_one")
+            .label(">")
+            .style(ButtonStyle::Success)
+            .disabled(right),
+        CreateButton::new("search_right")
+            .label(">>")
+            .style(ButtonStyle::Success)
+            .disabled(right),
+    ];
+    CreateActionRow::Buttons(buttons)
 }

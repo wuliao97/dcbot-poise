@@ -21,7 +21,23 @@ pub enum SpotifySearchLanguage {
 }
 
 
-
+#[derive(ChoiceParameter, Debug)]
+pub enum StarRailServer {
+    Asia,
+    America,
+    Europe,
+    TwHkMo,
+}
+impl StarRailServer {
+    pub fn time_zone(&self) -> i8 {
+        match self {
+            StarRailServer::Asia => 8,
+            StarRailServer::America => 9,
+            StarRailServer::Europe => -2,
+            StarRailServer::TwHkMo => 8
+        }
+    }
+}
 
 pub fn spotify_err_msg_one(local: Option<&str>) -> &str {
     return match local {

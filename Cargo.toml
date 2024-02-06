@@ -12,19 +12,31 @@ reqwest = { version = "0.11" }
 dotenv = "0.15.0"
 pretty_env_logger = "0.5.0"
 log = { version = "0.4.14", default-features = false }
-strip-ansi-escapes = "0.1.0"
-serde = { version = "1.0.*", features = ["derive"] }
+strip-ansi-escapes = "0.2.0"
+serde = { version = "1.0.180", features = ["derive"] }
 serde_json = "1.0"
-sysinfo = "0.29.7"
+sysinfo = "0.30.5"
 async-trait = "0.1"
-rspotify = "0.11.7"
+rspotify = "0.11.0"
 chrono = "0.4.19"
+sqlx = { version = "0.7.3", features = ["sqlite", "runtime-tokio-native-tls"] }
+
+anyhow = "1.0.75"
+image = "0.24.7"
+cloudflare-bypasser = "0.2.0"
+imageproc = "0.23.0"
+rusttype = "0.9.3"
+rand = "0.8.5"
+
+
+[dependencies.miHoYo-API]
+path = "C:/Users/ennui/IdeaProjects/miHoYo-API-Wrapper"
 
 [dependencies.poise]
-version = "0.5.5"
+version = "0.6.0"
 features = ["cache"]
 
 [dependencies.serenity]
-version = "0.11.6"
+version = "0.12.0"
 default-features = false
 features = ["unstable_discord_api"]

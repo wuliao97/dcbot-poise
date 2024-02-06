@@ -1,11 +1,8 @@
-// use std::sync::atomic::AtomicU32;
-
-// use tokio::sync::RwLock;
+use tokio::sync::Mutex;
 
 
-// i don't know how to do this even.
 pub struct Data {
-    // pub poise_mentions: AtomicU32,
-
+    pub pool: Mutex<sqlx::SqlitePool>,
+    pub mihoyo: Mutex<miHoYo_API::client::Client>
 }
 

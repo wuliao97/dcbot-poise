@@ -3,6 +3,8 @@ pub const COLOR_FAIL: u32 = 0xff7761;
 pub const COLOR_WARN: u32 = 0xad7805;
 pub const COLOR_GRAY: u32 = 0x2b2d31;
 pub const SPOTIFY_GREEN: u32 = 0x1DB954;
+pub const MIHOYO_TOP_COLOR: u32 = 0x1b1d2a;
+pub const MIHOYO_UNDER_COLOR: u32 = 0x0c0f1d;
 
 
 pub const SPOTIFY_URL: &str = "https://open.spotify.com/";

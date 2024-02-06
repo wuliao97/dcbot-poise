@@ -1,9 +1,14 @@
 ### Directory ###
 /target
 /.idea
-
+/resources/
+/migrations/
 /src/commands/test/
+/src/commands/game/starrail/*
 
 ### File ###
-.env
+*.db
+*.env
+run.bat
+TODO.md
 Cargo.lock

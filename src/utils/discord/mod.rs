@@ -3,6 +3,8 @@ pub mod describe;
 pub mod embed;
 pub mod page;
 pub mod button;
+pub mod modal;
+pub mod select;
 
 
 #[macro_export]

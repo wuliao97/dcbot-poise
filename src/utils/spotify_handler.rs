@@ -2,7 +2,7 @@ use poise::serenity_prelude as serenity;
 use serenity::builder::CreateEmbed;
 use crate::utils::discord::embed::spotify_search_embed;
 
-
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct SpotifyHandler {
     material: Vec<String>,

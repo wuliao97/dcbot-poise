@@ -1,4 +1,4 @@
-use poise::serenity_prelude::{ self as serenity, Activity, Presence, UserId};
+use poise::serenity_prelude::{ self as serenity, Activity, ActivityData, Presence, UserId};
 use crate::utils::Context;
 use crate::apis::spotify::{ExtractInfo, SpotifyAPI};
 use crate::url_with_bold;
@@ -173,9 +173,10 @@ pub enum InfoType {
 }
 
 
-pub async fn global_presence(ctx: &serenity::Context, message: String) {
+pub fn global_presence(ctx: &serenity::Context, message: String) {
+    let message = String::from(message);
     ctx.set_presence(
-        Some(Activity::playing(message)),
+        Some(ActivityData::watching(message)),
         OnlineStatus::Online
-    ).await;
+    );
 }

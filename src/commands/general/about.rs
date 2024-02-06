@@ -1,5 +1,7 @@
 use std::env;
-use sysinfo::{System, SystemExt};
+use poise::CreateReply;
+use serenity::all::CreateEmbed;
+use sysinfo::System;
 
 use crate::{quote, url};
 use crate::utils::{Context, Error};
@@ -25,19 +27,19 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
         format!("`{}` Commands\n`{}` Sub Commands", commands, sub_commands)
     };
     let user = {
-        let cache = ctx.cache().clone();
+        let cache = ctx.cache();
         let servers = cache.guild_count();
         let users: usize = cache.user_count();
         format!("`{}` Servers\n`{}` Users", servers, users)
     };
     let platform = {
         let system = System::new();
-        let os = system.name().unwrap();
+        let os = System::name().unwrap();
         let project_version = env!("CARGO_PKG_VERSION");
         format!("OS `{}`\nBot Version `{}`", os, project_version)
     };
     let support = {
-        let owner_id = ctx.http().get_current_application_info().await.unwrap().owner.id;
+        let owner_id = ctx.http().get_current_application_info().await?.owner.unwrap().id;
         let url = format!("{}{}", USER_SEARCH_FROM_ID, owner_id);
         url!("Owner Info", url)
     };
@@ -46,18 +48,33 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
         url!("Github", gh_url)
     };
 
-    ctx.send(|c| {
-        c.embed(|e| {
-            e.title("About Me")
-                .description(quote!(description))
-                .field("Commands", quote!(command), true)
-                .field("Users", quote!(user), true)
-                .field("Platform", quote!(platform), true)
-                .field("Support", quote!(support), true)
-                .field("Source", quote!(source), true)
-                .color(COLOR_OKAY)
-        })
-    }).await.unwrap();
+    let embed = CreateEmbed::default()
+        .title("About me")
+        .description(quote!(description))
+        .field("Commands", quote!(command), true)
+        .field("Users", quote!(user), true)
+        .field("Platform", quote!(platform), true)
+        .field("Support", quote!(support), true)
+        .field("Source", quote!(source), true)
+        .color(COLOR_OKAY)
+        .clone();
+
+    ctx.send(CreateReply::default().embed(embed)).await?;
+
+    Ok(())
+}
+
+
+#[poise::command(
+    slash_command
+)]
+pub async fn release_note(ctx: Context<'_>) -> Result<(), Error> {
+    let emb = CreateEmbed::new()
+        .description("demo");
+
+
+    ctx.send(CreateReply::default().embed(emb))
+        .await?;
 
     Ok(())
 }

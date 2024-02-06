@@ -1,4 +1,5 @@
 use poise::serenity_prelude as serenity;
+use serenity::all::{CreateEmbedAuthor, CreateEmbedFooter};
 use serenity::CreateEmbed;
 
 use crate::quote;
@@ -34,26 +35,24 @@ impl SpotifySearch {
 
 
 pub fn spotify_some_error<T: ToString>(err_msg: T, cmd_id: Option<String>) -> CreateEmbed {
-    let mut material = CreateEmbed::default();
-    material.color(COLOR_FAIL)
+    let mut material = CreateEmbed::default()
+        .color(COLOR_FAIL)
         .description(err_msg.to_string());
+    // material = material
 
     if let Some(id) = cmd_id {
-        material.field("Try Again", quote!(id), false);
+        material = material.field("Try Again", quote!(id), false);
     };
 
-    material.clone()
+    material
 }
 
 
 pub fn spotify_search_embed(description: &String, user: &serenity::User, (first, last): (usize, usize)) -> CreateEmbed {
     CreateEmbed::default()
-        .author(|author| {
-            let url = user.avatar_url().unwrap_or(user.default_avatar_url());
-            let name = format!("{} is searching", user.name);
-            author.icon_url(url).name(name)
-        })
+        .author(CreateEmbedAuthor::new(format!("{} is searching", user.name))
+                    .icon_url(user.avatar_url().unwrap_or(user.default_avatar_url())))
         .color(SPOTIFY_GREEN)
         .description(description)
-        .footer(|footer| footer.text(format!("Page: {}/{}", first, last))).clone()
+        .footer(CreateEmbedFooter::new(format!("Page: {}/{}", first, last))).clone()
 }

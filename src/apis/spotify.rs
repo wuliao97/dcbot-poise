@@ -2,6 +2,7 @@ use chrono::NaiveDateTime;
 use rspotify::{Credentials, ClientCredsSpotify, ClientResult};
 use rspotify::clients::BaseClient;
 use rspotify::model::{idtypes, FullTrack, SearchResult, SearchType, Market};
+use serenity::all::CreateEmbedFooter;
 use serenity::builder::CreateEmbed;
 use crate::{quote, url_with_bold};
 use crate::utils::constant::SPOTIFY_GREEN;
@@ -42,6 +43,7 @@ pub struct ExtractInfo {
     material: SearchResult,
 }
 
+#[allow(dead_code)]
 impl ExtractInfo {
     pub fn new(material: SearchResult) -> Self {
         Self { material }
@@ -140,13 +142,12 @@ impl ExtractInfo {
                     .map(|artist| url_with_bold!(&artist.name, &artist.external_urls["spotify"]))
                     .collect::<Vec<String>>()
                     .join(", ");
-                dbg!(&item.album_group);
 
-                embed.title(item.name.to_string())
+                embed = embed.title(item.name.to_string())
                     .url(item.external_urls["spotify"].to_string())
                     .field("by", quote!(artist_with_url), false)
                     .thumbnail(item.images.get(0).unwrap().url.to_string())
-                    .footer(|f| f.text(format!("Released: {}", item.release_date.clone().unwrap())));
+                    .footer(CreateEmbedFooter::new(format!("Released: {}", item.release_date.clone().unwrap())));
             }
             SearchResult::Artists(info) => {
                 let item = info.items.get(index).unwrap();
@@ -156,11 +157,11 @@ impl ExtractInfo {
                     .collect::<Vec<String>>()
                     .join(", ");
 
-                embed.title(&item.name)
+                embed = embed.title(&item.name)
                     .url(&item.external_urls["spotify"])
                     .description(quote!(genres))
                     .thumbnail(item.images.get(0).unwrap().url.to_string())
-                    .footer(|f| f.text(format!("Follower: {}", &item.followers.total)));
+                    .footer(CreateEmbedFooter::new(format!("Follower: {}", &item.followers.total)));
             }
             SearchResult::Tracks(info) => {
                 let item = info.items.get(index).unwrap();
@@ -172,25 +173,16 @@ impl ExtractInfo {
                     .join(", ");
                 let album = url_with_bold!(item.album.name.clone(), item.album.external_urls["spotify"].clone());
 
-                embed.thumbnail(&item.album.images.get(0).unwrap().url.to_string())
+                embed = embed.thumbnail(&item.album.images.get(0).unwrap().url.to_string())
                     .field("title", quote!(title), false)
                     .field("by", quote!(artist), false)
                     .field("on", quote!(album), false)
-                    .footer(|f| f.text(format!("Time: {}", ExtractInfo::format_time(item.duration.num_seconds()))))
-                ;
+                    .footer(CreateEmbedFooter::new(format!("Time: {}", ExtractInfo::format_time(item.duration.num_seconds()))));
             }
             _ => {}
         }
-        embed
+        embed.clone()
     }
-
-
-
-    // SearchResult::Albums(info) => {}
-    // SearchResult::Artists(info) => {}
-    // SearchResult::Tracks(info) => {}
-    // _ => {}
-
 
     pub fn names(&self) -> Vec<String> {
          match &self.material {
@@ -241,7 +233,6 @@ impl ExtractInfo {
                     set.push(item.artists.iter().map(|artist| artist.name.to_owned()).collect::<Vec<String>>().join(";"));
                     base.push(set);
                 };
-
             }
             _ => {}
         }
